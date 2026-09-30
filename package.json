@@ -1,0 +1,14 @@
+{
+  "name": "reworked-games-poll-bot",
+  "version": "1.0.0",
+  "description": "Automated Discord Poll Bot for ReWorked-Games",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "axios": "^1.6.8",
+    "express": "^4.19.2"
+  }
+}
