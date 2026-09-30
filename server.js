@@ -7,15 +7,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
-    res.send('🤖 ReWorked-Games Tracker Bot is running perfectly!');
+    res.send('ReWorked-Games Tracker Bot is running perfectly!');
 });
 
 app.listen(PORT, () => {
-    console.log(`📡 Render web listener successfully bound to port \${PORT}`);
+    console.log(`Render web listener successfully bound to port \${PORT}`);
 });
 
 // CONFIGURATION ENVIRONMENT VARIABLES (Managed via Render Control Panel)
-const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
+const RAW_TOKEN = process.env.DISCORD_BOT_TOKEN;
+// Auto-clean the token to strip accidental spaces or quotes causing the header crash
+const BOT_TOKEN = RAW_TOKEN ? RAW_TOKEN.replace(/["']/g, "").trim() : undefined;
+
 const TARGET_CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
 const ROBLOX_GROUP_ID = 223811537; // ReWorked-Games
 
@@ -119,9 +122,9 @@ client.on(Events.MessagePollVoteAdd, async (pollAnswer, userId) => {
             registryDisplayString += `\n* **@\${username}** selected option: \`${choice}\``;
         });
 
-        const baseContent = pollAnswer.message.content.split('\n\n### 📊')[0];
+        const baseContent = pollAnswer.message.content.split('\n\n### 📊');
         await pollAnswer.message.edit({
-            content: baseContent + registryDisplayString
+            content: baseContent[0] + registryDisplayString
         });
     } catch (e) {
         console.error("Error tracking live gateway vote:", e.message);
