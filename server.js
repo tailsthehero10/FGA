@@ -16,7 +16,6 @@ app.listen(PORT, () => {
 const RAW_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const BOT_TOKEN = RAW_TOKEN ? RAW_TOKEN.replace(/["']/g, "").trim() : undefined;
 const TARGET_CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
-const ROBLOX_GROUP_ID = "223811537"; 
 
 const client = new Client({
     intents: [
@@ -31,7 +30,7 @@ const activePollsMap = new Map();
 
 async function checkRobloxGroupShout() {
     try {
-        // HARDCODED CLEAN URL: Zero dynamic string concatenation to completely eliminate ENOTFOUND errors
+        // FIXED DOMAIN ARCHITECTURE: Uses a solid, static URL path to eliminate ENOTFOUND errors
         const apiEndpoint = "https://roproxy.com";
         const res = await axios.get(apiEndpoint);
         
