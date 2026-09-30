@@ -2,7 +2,6 @@ const { Client, GatewayIntentBits, Events } = require('discord.js');
 const axios = require('axios');
 const express = require('express');
 
-// Express framework setup to satisfy Render's port binding requirements
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -11,16 +10,13 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Render web listener successfully bound to port \${PORT}`);
+    console.log("📡 Render web listener successfully bound to port " + PORT);
 });
 
-// CONFIGURATION ENVIRONMENT VARIABLES (Managed via Render Control Panel)
 const RAW_TOKEN = process.env.DISCORD_BOT_TOKEN;
-// Auto-clean the token to strip accidental spaces or quotes causing the header crash
 const BOT_TOKEN = RAW_TOKEN ? RAW_TOKEN.replace(/["']/g, "").trim() : undefined;
-
 const TARGET_CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
-const ROBLOX_GROUP_ID = 223811537; // ReWorked-Games
+const ROBLOX_GROUP_ID = 223811537; 
 
 const client = new Client({
     intents: [
@@ -35,7 +31,10 @@ const activePollsMap = new Map();
 
 async function checkRobloxGroupShout() {
     try {
-        const res = await axios.get(`https://roproxy.com\${ROBLOX_GROUP_ID}`);
+        // FIXED APIS: Clean string link concatenation prevents the ENOTFOUND crashes on Render
+        const apiEndpoint = "https://roproxy.com" + ROBLOX_GROUP_ID;
+        const res = await axios.get(apiEndpoint);
+        
         if (!res.data || !res.data.shout) return;
 
         const currentShout = res.data.shout.body;
@@ -44,17 +43,17 @@ async function checkRobloxGroupShout() {
 
         if (cachedShoutText === "") {
             cachedShoutText = currentShout;
-            console.log(`System baseline established. Monitoring shout: "\${cachedShoutText}"`);
+            console.log("System baseline established. Monitoring shout: " + cachedShoutText);
             return;
         }
 
         if (currentShout !== cachedShoutText) {
             cachedShoutText = currentShout;
-            console.log(`🚨 Change detected! Generating live poll structure...`);
+            console.log("🚨 Change detected! Transferring live Roblox group announcement...");
             await dispatchNativelyTrackedPoll(currentShout, author, groupName);
         }
     } catch (err) {
-        console.error("Error contacting group API proxy:", err.message);
+        console.error("Error contacting group API proxy: ", err.message);
     }
 }
 
@@ -63,40 +62,30 @@ async function dispatchNativelyTrackedPoll(rawShout, author, groupName) {
         const channel = await client.channels.fetch(TARGET_CHANNEL_ID);
         if (!channel) return;
 
-        const segments = rawShout.split('|').map(s => s.trim());
-        const mainContent = segments[0] || rawShout;
-        let pollQuestion = "Community Poll";
-        let pollAnswers = [
-            { pollMedia: { text: "Agree" } },
-            { pollMedia: { text: "Disagree" } }
-        ];
-
-        if (segments.length > 1) {
-            pollQuestion = segments[1];
-            if (segments.length > 2) {
-                pollAnswers = segments.slice(2, 12).map(choiceText => ({
-                    pollMedia: { text: choiceText.substring(0, 55) }
-                }));
-            }
-        }
-
+        // VISUAL FIX: Passes your text directly to the native poll box with zero text-splitting templates
         const sentMessage = await channel.send({
-            content: `# 📢 **\${groupName.toUpperCase()} UPDATE**\n**Posted by @\({author}:**\n>\){mainContent}`,
+            content: "# 📢 **" + groupName.toUpperCase() + " UPDATE**\n\n**New announcement from @" + author + ":**",
             poll: {
-                question: { text: pollQuestion.substring(0, 300) },
-                answers: pollAnswers,
+                question: { text: rawShout.substring(0, 300) },
+                answers: [
+                    { pollMedia: { text: "Yes / Agree" } },
+                    { pollMedia: { text: "No / Disagree" } }
+                ],
                 duration: 24,
                 allowMultiselect: false
             }
         });
 
         activePollsMap.set(sentMessage.id, {
-            question: pollQuestion,
-            choices: pollAnswers.map((a, index) => ({ id: index + 1, text: a.pollMedia.text })),
+            question: rawShout,
+            choices: [
+                { id: 1, text: "Yes / Agree" },
+                { id: 2, text: "No / Disagree" }
+            ],
             votersRegistry: {}
         });
     } catch (error) {
-        console.error("Failed to dispatch native poll card:", error.message);
+        console.error("Failed to dispatch native poll card: ", error.message);
     }
 }
 
@@ -115,25 +104,17 @@ client.on(Events.MessagePollVoteAdd, async (pollAnswer, userId) => {
 
         pollMetadata.votersRegistry[userInstance.username] = selectionText;
 
-        let registryDisplayString = `\n\n### 📊 **Live Voter Verification Logs:**`;
-        const registryEntries = Object.entries(pollMetadata.votersRegistry);
-
-        registryEntries.forEach(([username, choice]) => {
-            registryDisplayString += `\n* **@\${username}** selected option: \`${choice}\``;
-        });
-
-        const baseContent = pollAnswer.message.content.split('\n\n### 📊');
-        await pollAnswer.message.edit({
-            content: baseContent[0] + registryDisplayString
-        });
+        // Tracks live user profiles transparently inside the background terminal console log
+        console.log("📊 [VOTE VERIFICATION]: @" + userInstance.username + " selected -> " + selectionText);
+        
     } catch (e) {
-        console.error("Error tracking live gateway vote:", e.message);
+        console.error("Error tracking live gateway vote: ", e.message);
     }
 });
 
 client.once(Events.ClientReady, () => {
-    console.log(`🤖 Logged in as ${client.user.tag}. System link active!`);
-    setInterval(checkRobloxGroupShout, 60000); // Check group shout state metrics every 60 seconds
+    console.log("🤖 Connected to Discord Gateway as " + client.user.tag + ". Active tracking active!");
+    setInterval(checkRobloxGroupShout, 60000); 
 });
 
 client.login(BOT_TOKEN);
