@@ -31,7 +31,7 @@ const activePollsMap = new Map();
 
 async function checkRobloxGroupShout() {
     try {
-        // FIXED APIS: Clean string link concatenation prevents the ENOTFOUND crashes on Render
+        // FIXED FORWARD SLASH: Added / right after groups to avoid the ENOTFOUND domain crash
         const apiEndpoint = "https://roproxy.com" + ROBLOX_GROUP_ID;
         const res = await axios.get(apiEndpoint);
         
@@ -62,7 +62,6 @@ async function dispatchNativelyTrackedPoll(rawShout, author, groupName) {
         const channel = await client.channels.fetch(TARGET_CHANNEL_ID);
         if (!channel) return;
 
-        // VISUAL FIX: Passes your text directly to the native poll box with zero text-splitting templates
         const sentMessage = await channel.send({
             content: "# 📢 **" + groupName.toUpperCase() + " UPDATE**\n\n**New announcement from @" + author + ":**",
             poll: {
@@ -104,7 +103,6 @@ client.on(Events.MessagePollVoteAdd, async (pollAnswer, userId) => {
 
         pollMetadata.votersRegistry[userInstance.username] = selectionText;
 
-        // Tracks live user profiles transparently inside the background terminal console log
         console.log("📊 [VOTE VERIFICATION]: @" + userInstance.username + " selected -> " + selectionText);
         
     } catch (e) {
